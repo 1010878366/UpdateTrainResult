@@ -18,7 +18,7 @@ public:
     int m_nRecordsetStatus;  // 查询执行状态：0表示成功，非0表示错误代码
 
 public:
-    bool Connection(const QString& strServer,const QString& strDataBase,const QString& strUser, const QString& strPwd, bool bConMode);  //连接数据库
+    bool Connection(const QString& strServer,const QString& strDataBase, const QString& strPwd, bool bConMode);  //连接数据库
     void DisConnect();      //断开数据库
     bool Execute(const QString& strSQL);    //执行sql语句
     bool GetCollect(const QString& ColumnName,QString& strValue);   //获取字段值

@@ -1,7 +1,16 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include"ADOLinkToBase.h"
+#include<QFile>
+#include<QFileDialog>
+#include<QSettings>
+#include<QMessageBox>
+#include<QTimer>
+#include<QListWidget>
+#include<QSystemTrayIcon>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,5 +26,26 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    ADOLinkToBase *m_pAdo;
+    QString m_strFilePath;					//存储上次找到的文件路径(path_config.ini中的file_path的值)
+    QString m_strReelConfigPath;			//存储卷号config文件的路径([卷号]/config.ini的路径)
+    //QString m_strReelName;				//存储获取到的卷名([卷号]/config.ini中reel_name的值)
+    QString m_strReelTable;					//存储获取到的卷号([卷号]/config.ini中reel_table的值)
+
+private slots:
+    void onOpenButtonClicked();
+    void onMinimumButtonClicked();
+    void onCloseButtonClicked();
+
+
+public:
+    QString m_strReelName;  //获取到的文件路径
+
+public:
+    bool WriteToDB(QString strReelTable);
+    bool ConnectToDatabase(ADOLinkToBase *&pAdo);
+    void DisConnectFromDatabase(ADOLinkToBase *&pAdo);
+
 };
 #endif // MAINWINDOW_H

@@ -19,7 +19,7 @@ ADOLinkToBase::~ADOLinkToBase()
     }
 }
 
-bool ADOLinkToBase::Connection(const QString& strServer,const QString& strDataBase,const QString& strUser, const QString& strPwd, bool bConMode)
+bool ADOLinkToBase::Connection(const QString& strServer,const QString& strDataBase, const QString& strPwd, bool bConMode)
 {
     if(m_dbConnection.isOpen())
         m_dbConnection.close();
@@ -27,12 +27,12 @@ bool ADOLinkToBase::Connection(const QString& strServer,const QString& strDataBa
     m_dbConnection = QSqlDatabase::addDatabase("QODBC");
 
     QString dsn;
-    if(bConMode)
+    if(bConMode)    //远程IP登录
     {
         //SQLserver登录
-        dsn = QString("Driver={SQL Server};Server=%1;Database=%2;Uid=%3;Pwd=%4").arg(strServer).arg(strDataBase).arg(strUser).arg(strPwd);
+        dsn = QString("Driver={SQL Server};Server=%1;Database=%2;Uid=sa;Pwd=%3").arg(strServer).arg(strDataBase).arg(strPwd);
     }
-    else
+    else    //本地Windows账户登录
     {
         dsn = QString("Driver={SQL Server};Server=%1;Database=%2;Trusted_Connection=yes;").arg(strServer).arg(strDataBase);
     }
@@ -45,7 +45,6 @@ bool ADOLinkToBase::Connection(const QString& strServer,const QString& strDataBa
     }
     else {
         QMessageBox::warning(nullptr,"警告",QString("数据库连接失败：%1").arg(m_dbConnection.lastError().text()));
-        //qDebug() << "Database connection failed:" << m_dbConnection.lastError().text();
         m_nConnectStatus = -1;
         return false;
     }
