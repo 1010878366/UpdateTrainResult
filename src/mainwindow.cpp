@@ -10,14 +10,14 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("更新训练结果 V1.0.3");
+    setWindowTitle("更新训练结果 V1.0.4");
 
 
 
 
-    connect(ui->btn_Open,&QPushButton::clicked,this,&MainWindow::onOpenButtonClicked);
+    connect(ui->btn_Open,&QPushButton::clicked,this,&MainWindow::OpenButton);
     connect(ui->btn_MiniToTray,&QPushButton::clicked,this,&MainWindow::ToTray);
-    connect(ui->btn_Close,&QPushButton::clicked,this,&MainWindow::DeleteTray);
+    connect(ui->btn_Close,&QPushButton::clicked,this,&MainWindow::close);
 }
 
 MainWindow::~MainWindow()
@@ -26,7 +26,7 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::onOpenButtonClicked()
+void MainWindow::OpenButton()
 {
     //1.选择.ini文件
     QString strReelConfigPath  = QFileDialog::getOpenFileName(this,tr("选择配置文件"),QCoreApplication::applicationDirPath(),tr("INI文件(*.ini)"));
@@ -42,17 +42,24 @@ void MainWindow::onOpenButtonClicked()
 
     QString strInfo;
     strInfo = tr("正在写入数据库");
-    //AddOneMsg();
+    AddOneMsg(strInfo);
 
-    bool bWriteToDB = WriteToDB(strReelTable);
-    if (bWriteToDB)
-    {
-        strInfo = QString::fromLocal8Bit("数据表：%s 完成手动更新！").arg(strReelTable);
-    }
+    bool bWrite = WriteToDB(strReelTable);
+    if (bWrite)
+        strInfo = tr("数据表：%1 完成手动更新！").arg(strReelTable);
     else
-    {
-        strInfo = QString::fromLocal8Bit("数据表：%s 手动更新失败，请重试或检查文件！").arg(strReelTable);
-    }
+        strInfo = tr("数据表：%1 手动更新失败，请重试或检查文件！").arg(strReelTable);
+    AddOneMsg(strInfo);
+}
+
+void MainWindow::AutomaticUpdateDatebase(QString strReelTable)
+{
+    QString strInfo;
+    bool bWrite = WriteToDB(strReelTable);
+    if(bWrite)
+        strInfo = tr("数据表：%1 完成自动更新!").arg(strReelTable);
+    else
+        strInfo = tr("数据表：%1 自动更新失败，请重试或手动更新!").arg(strReelTable);
     AddOneMsg(strInfo);
 }
 
@@ -182,7 +189,7 @@ void MainWindow::ToTray()
     if(!m_trayIcon)
     {
         m_trayIcon = new QSystemTrayIcon(this);
-        m_trayIcon->setIcon(QIcon("/icons/app.png"));
+        m_trayIcon->setIcon(QIcon(":src/icons/logo.png"));
         m_trayIcon->setToolTip("更新训练结果");
 
         //创建托盘右键菜单
@@ -205,6 +212,7 @@ void MainWindow::ToTray()
             {
                 this->showNormal();
                 this->activateWindow();
+                DeleteTray();
             }
         });
     }

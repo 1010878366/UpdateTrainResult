@@ -40,9 +40,8 @@ private:
     QString m_strReelTable;					//存储获取到的卷号([卷号]/config.ini中reel_table的值)
 
 private slots:
-    void onOpenButtonClicked();
-    void onMinimumButtonClicked();
-    void onCloseButtonClicked();
+    void OpenButton();
+    //void MiniToTray();
     void ToTray();    //最小化到托盘区
     void DeleteTray();
 
@@ -56,6 +55,7 @@ public:
     void DisConnectFromDatabase(ADOLinkToBase *&pAdo);
     void AddOneMsg(QString strInfo);
     void AddOneLog(QString strMonth, QString strDay, QString strInfo);
+    void AutomaticUpdateDatebase(QString strReelTable);
     //bool MakeDirectory(const QString &strPathName);
 
 };
