@@ -9,7 +9,10 @@
 #include<QMessageBox>
 #include<QTimer>
 #include<QListWidget>
+#include<QTextStream>
 #include<QSystemTrayIcon>
+#include<QMenu>
+#include<QAction>
 
 
 QT_BEGIN_NAMESPACE
@@ -26,6 +29,9 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    QListWidget* m_listInfo;
+    QFile m_logFile;
+    QSystemTrayIcon *m_trayIcon = nullptr;        //程序最小化到托盘区的指针
 
     ADOLinkToBase *m_pAdo;
     QString m_strFilePath;					//存储上次找到的文件路径(path_config.ini中的file_path的值)
@@ -37,6 +43,8 @@ private slots:
     void onOpenButtonClicked();
     void onMinimumButtonClicked();
     void onCloseButtonClicked();
+    void ToTray();    //最小化到托盘区
+    void DeleteTray();
 
 
 public:
@@ -46,6 +54,9 @@ public:
     bool WriteToDB(QString strReelTable);
     bool ConnectToDatabase(ADOLinkToBase *&pAdo);
     void DisConnectFromDatabase(ADOLinkToBase *&pAdo);
+    void AddOneMsg(QString strInfo);
+    void AddOneLog(QString strMonth, QString strDay, QString strInfo);
+    //bool MakeDirectory(const QString &strPathName);
 
 };
 #endif // MAINWINDOW_H

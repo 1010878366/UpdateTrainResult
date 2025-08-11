@@ -76,7 +76,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QPushButton" name="btn_Minimum">
+         <widget class="QPushButton" name="btn_MiniToTray">
           <property name="text">
            <string>最小化到托盘</string>
           </property>

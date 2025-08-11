@@ -10,10 +10,14 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setWindowTitle("更新训练结果 V1.0.3");
+
 
 
 
     connect(ui->btn_Open,&QPushButton::clicked,this,&MainWindow::onOpenButtonClicked);
+    connect(ui->btn_MiniToTray,&QPushButton::clicked,this,&MainWindow::ToTray);
+    connect(ui->btn_Close,&QPushButton::clicked,this,&MainWindow::DeleteTray);
 }
 
 MainWindow::~MainWindow()
@@ -106,7 +110,7 @@ bool MainWindow::WriteToDB(QString strReelTable)
         if(strRectCoordinate.contains("-9.9999"))
             strRectCoordinate.clear();
 
-        UpdateDefectInfo(m_pAdo,strReelTable,m_strDefectName[nDefectIndex], nFileIndex,nDefectLevel,strRectCoordinate);
+        //UpdateDefectInfo(m_pAdo,strReelTable,m_strDefectName[nDefectIndex], nFileIndex,nDefectLevel,strRectCoordinate);
     }
     file.close();
 
@@ -118,4 +122,103 @@ bool MainWindow::WriteToDB(QString strReelTable)
     return true;
 }
 
+void MainWindow::AddOneMsg(QString strInfo)
+{
+    //获取当前时间
+    QDateTime time = QDateTime::currentDateTime();
+    QString strTime = time.toString("yyyy-MM-dd HH:mm:ss");
+
+    //拼接带时间的消息
+    QString strMsg = strTime+"  "+strInfo;
+
+    //添加到列表控件并滚动到最后
+    //m_listInfo->addItem(strInfo);
+    //m_listInfo->setCurrentRow(m_listInfo->count()-1);
+    ui->textEdit_Info->append(strMsg);
+
+
+    //记录到日志文件
+    QString strMonth = time.toString("yyyy-MM");
+    QString strDay = time.toString("dd");
+    AddOneLog(strMonth,strDay,strMsg);
+}
+
+void MainWindow::AddOneLog(QString strMonth, QString strDay, QString strInfo)
+{
+    QString strPath = QString("../../Log/%1/").arg(strMonth);
+    QDir dir;
+
+    if(!dir.exists(strPath))
+    {
+        dir.mkpath(strPath);
+    }
+
+    QString strFilePath = strPath+strDay+"log.txt";
+
+    if(m_logFile.open(QIODevice::Append|QIODevice::Text))
+    {
+        QTextStream out(&m_logFile);
+        out <<strInfo<<"/r/n";
+        m_logFile.close();
+
+    }
+}
+
+//bool MainWindow::MakeDirectory(const QString &strPathName)
+//{
+//    QDir dir;
+//    return dir.mkpath(path);
+//}
+
+void MainWindow::ToTray()
+{
+    if(!QSystemTrayIcon::isSystemTrayAvailable())
+    {
+        AddOneMsg("当前系统不支持最小化到托盘");
+        return;
+    }
+
+    //创建托盘图标
+    if(!m_trayIcon)
+    {
+        m_trayIcon = new QSystemTrayIcon(this);
+        m_trayIcon->setIcon(QIcon("/icons/app.png"));
+        m_trayIcon->setToolTip("更新训练结果");
+
+        //创建托盘右键菜单
+        QMenu *trayMenu = new QMenu(this);
+        QAction *restoreAct = new QAction("显示窗口",this);
+        QAction *quitAct = new QAction("退出",this);
+
+        connect(restoreAct,&QAction::triggered,this,&MainWindow::showNormal);
+        connect(quitAct, &QAction::triggered, qApp, &QApplication::quit);
+
+        trayMenu->addAction(restoreAct);
+        trayMenu->addSeparator();
+        trayMenu->addAction(quitAct);
+
+        m_trayIcon->setContextMenu(trayMenu);
+
+        connect(m_trayIcon,&QSystemTrayIcon::activated,this,[=](QSystemTrayIcon::ActivationReason reason)
+        {
+            if(reason == QSystemTrayIcon::DoubleClick)
+            {
+                this->showNormal();
+                this->activateWindow();
+            }
+        });
+    }
+    m_trayIcon->show();
+    this->hide();
+}
+
+void MainWindow::DeleteTray()
+{
+    if(m_trayIcon)
+    {
+        m_trayIcon->hide();
+        delete m_trayIcon;
+        m_trayIcon = nullptr;
+    }
+}
 
