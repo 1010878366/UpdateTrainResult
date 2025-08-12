@@ -10,10 +10,41 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("更新训练结果 V1.0.4");
+    setWindowTitle("更新训练结果 V1.0.5");
 
+    AddOneMsg(tr("AAA"));
 
+    m_pAdo = nullptr;
 
+    //读取路径配置
+    QString strPathConfig = QString("F:/Inference/path_config.ini");
+    QSettings setFilePath(strPathConfig,QSettings::IniFormat);
+    m_strFilePath = setFilePath.value("param/file_path","NULL").toString();
+
+    //读取缺陷名称映射表
+    QSettings setDefectMap("D:/DefectMap.ini",QSettings::IniFormat);
+    setDefectMap.beginGroup("Param");
+    for(int i=0;i<64;i++)
+    {
+        QString strKey = QString::number(i);
+        m_strDefectName[i]=setDefectMap.value(strKey,"无分类").toString();
+    }
+    setDefectMap.endGroup();
+
+    //定时器
+    m_timer1 = new QTimer(this);
+    connect(m_timer1,&QTimer::timeout,this,&MainWindow::onTimer1);
+    m_timer1->start(2000);
+
+    m_timer2 = new QTimer(this);
+    connect(m_timer2,&QTimer::timeout,this,&MainWindow::onTimer2);
+    m_timer2->setSingleShot(true);  //单次触发模式
+    //m_timer2->start(2000);
+
+    m_timer3 = new QTimer(this);
+    connect(m_timer3,&QTimer::timeout,this,&MainWindow::onTimer3);
+    m_timer3->setSingleShot(true);
+    m_timer3->start(3000);
 
     connect(ui->btn_Open,&QPushButton::clicked,this,&MainWindow::OpenButton);
     connect(ui->btn_MiniToTray,&QPushButton::clicked,this,&MainWindow::ToTray);
@@ -86,13 +117,14 @@ void MainWindow::DisConnectFromDatabase(ADOLinkToBase *&pAdo)
 
 bool MainWindow::WriteToDB(QString strReelTable)
 {
-    QString strCsvPath = QString::fromLocal8Bit("F:\\Inference\\%s\\result.csv").arg(strReelTable);
+    QString strCsvPath = QString("F:/Inference/%1/result.csv").arg(strReelTable);
 
     QFile file(strCsvPath);
     if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
         return false;
 
-    ConnectToDatabase(m_pAdo);
+    if(!ConnectToDatabase(m_pAdo))
+        return false;
 
     while(!file.atEnd())
     {
@@ -117,7 +149,7 @@ bool MainWindow::WriteToDB(QString strReelTable)
         if(strRectCoordinate.contains("-9.9999"))
             strRectCoordinate.clear();
 
-        //UpdateDefectInfo(m_pAdo,strReelTable,m_strDefectName[nDefectIndex], nFileIndex,nDefectLevel,strRectCoordinate);
+        UpdateDefectInfo(m_pAdo,strReelTable,m_strDefectName[nDefectIndex], nFileIndex,nDefectLevel,strRectCoordinate);
     }
     file.close();
 
@@ -128,6 +160,31 @@ bool MainWindow::WriteToDB(QString strReelTable)
 
     return true;
 }
+
+void MainWindow::UpdateDefectInfo(ADOLinkToBase* pAdo,QString strTableName,QString strInfo,int nIndex,int nLevel,QString strRectCoordinate)
+{
+    QString strSQL = QString("UPDATE [%1] SET "
+                            "Feature_Name14 = '%2', "
+                            "Feature_nValue14 = %3, "
+                            "Feature_Name13 = '%4' "
+                            "WHERE Index_InQue = %5")
+            .arg(strTableName).arg(escapeSingleQuotes(strInfo)).arg(static_cast<float>(nLevel)).arg(escapeSingleQuotes(strRectCoordinate)).arg(nIndex);
+
+    if(!pAdo->Execute(strSQL))
+    {
+        QString strErr = QString("数据库更新失败！SQL语句：%1").arg(strSQL);
+        AddOneMsg(strErr);
+    }
+
+}
+
+// 辅助函数：转义SQL中的单引号，防止SQL注入和语法错误
+QString MainWindow::escapeSingleQuotes(const QString &str)
+{
+    QString result = str;
+    return result.replace("'", "''"); // Qt字符串替换，将单引号转为两个单引号
+}
+
 
 void MainWindow::AddOneMsg(QString strInfo)
 {
@@ -170,12 +227,6 @@ void MainWindow::AddOneLog(QString strMonth, QString strDay, QString strInfo)
 
     }
 }
-
-//bool MainWindow::MakeDirectory(const QString &strPathName)
-//{
-//    QDir dir;
-//    return dir.mkpath(path);
-//}
 
 void MainWindow::ToTray()
 {
@@ -230,3 +281,104 @@ void MainWindow::DeleteTray()
     }
 }
 
+void MainWindow::onTimer1()
+{
+    ExistNewReel();
+}
+
+void MainWindow::onTimer2()
+{
+    HandleInferProcess();
+    m_timer2->stop();
+}
+
+void MainWindow::onTimer3()
+{
+    ToTray();
+    m_timer3->stop();
+}
+
+void MainWindow::ExistNewReel()
+{
+    //1.判断是否获取到最新文件
+    QString strPathConfig = "F:/Inference/path_config.ini";
+    QString strGetFilePath;
+    QString strLog;
+
+    QSettings setFilePath(strPathConfig,QSettings::IniFormat);
+    strGetFilePath = setFilePath.value("param/file_path","NULL").toString();
+
+    if(m_strFilePath != strGetFilePath)
+    {
+        m_strFilePath = strGetFilePath;
+        m_strReelConfigPath = QString("%1/config.ini").arg(strGetFilePath);
+
+        QSettings setReelConfig(m_strReelConfigPath,QSettings::IniFormat);
+        m_strReelTable = setReelConfig.value("param/reel_table","NULL").toString();
+
+        if(m_strReelTable != "NULL")
+        {
+            strLog = QString("找到新文件：%1").arg(m_strReelTable);
+            AddOneMsg(strLog);
+
+            //2.进行Python深度学习步骤
+            bool b_IsExecute = setReelConfig.value("param/is_execute",0).toInt()!=0;
+
+            if(!b_IsExecute)
+            {
+                QProcess::startDetached("C:/Users/adv/Desktop/test_script.sh");
+
+                strLog=QString("%1 正在进行缺陷分类分级...").arg(m_strReelTable);
+                AddOneMsg(strLog);
+            }
+        }
+        else
+        {
+            return;
+        }
+    }
+    //3.循环判断Python深度学习步骤是否完成，完成立即关闭
+    m_timer2->start(2000);
+
+}
+
+void MainWindow::HandleInferProcess()
+{
+    QSettings settings(m_strReelConfigPath,QSettings::IniFormat);
+    int nIsInfer = settings.value("param/is_infer",0).toInt();
+
+    if(nIsInfer == 1)
+    {
+        //关闭外部程序
+        terminateProcessByName("mintty.exe");
+        AddOneMsg("缺陷分类完成，正在写入数据库...");
+
+        settings.setValue("param/is_infer",0);
+        settings.sync();    //立即写入
+
+        AutomaticUpdateDatebase(m_strReelTable);
+    }
+    else if(nIsInfer == 2)
+    {
+        terminateProcessByName("mintty.exe");
+        AddOneMsg("训练异常，请重试！");
+    }
+    else
+    {
+        return;
+    }
+}
+
+bool MainWindow::terminateProcessByName(const QString &procName)
+{
+#ifdef Q_OS_WIN
+    int ret = QProcess::execute("taskkill", {"/IM", procName, "/F"});
+#else
+    int ret = QProcess::execute("pkill", {procName});
+#endif
+
+    if(ret == 0)
+        return true;    //命令执行成功，进程已结束
+    else
+        return false;   //命令执行失败，进程未结束或不存在
+}
