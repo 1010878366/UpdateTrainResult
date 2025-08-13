@@ -66,7 +66,7 @@ public:
     void AddOneLog(QString strMonth, QString strDay, QString strInfo);
     void AutomaticUpdateDatebase(QString strReelTable);
     void UpdateDefectInfo(ADOLinkToBase* pAdo,QString strTableName,QString strInfo,int nIndex,int nLevel,QString strRectCoordinate);
-    QString escapeSingleQuotes(const QString &str);
+    QString escapeSingleQuotes(const QString &str); //转义SQL中的单引号，防止SQL注入和语法错误
     void ExistNewReel();
     void HandleInferProcess();
     bool terminateProcessByName(const QString &procName);

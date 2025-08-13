@@ -10,19 +10,19 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("更新训练结果 V1.0.5");
-
-    AddOneMsg(tr("AAA"));
+    setWindowTitle("更新训练结果 V1.0.6");
 
     m_pAdo = nullptr;
 
     //读取路径配置
     QString strPathConfig = QString("F:/Inference/path_config.ini");
     QSettings setFilePath(strPathConfig,QSettings::IniFormat);
+
     m_strFilePath = setFilePath.value("param/file_path","NULL").toString();
 
     //读取缺陷名称映射表
     QSettings setDefectMap("D:/DefectMap.ini",QSettings::IniFormat);
+    setDefectMap.setIniCodec(QTextCodec::codecForName("UTF-8"));
     setDefectMap.beginGroup("Param");
     for(int i=0;i<64;i++)
     {
@@ -49,11 +49,18 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btn_Open,&QPushButton::clicked,this,&MainWindow::OpenButton);
     connect(ui->btn_MiniToTray,&QPushButton::clicked,this,&MainWindow::ToTray);
     connect(ui->btn_Close,&QPushButton::clicked,this,&MainWindow::close);
+
+    //AddOneMsg(tr("aaa"));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+
+    if(m_logFile.isOpen())
+    {
+        m_logFile.close();
+    }
 }
 
 
@@ -102,7 +109,8 @@ bool MainWindow::ConnectToDatabase(ADOLinkToBase *&pAdo)
         pAdo = nullptr;
     }
     pAdo = new ADOLinkToBase;
-    bool bDBConnect = pAdo->Connection(tr("10.169.70.170"),tr("DB_CENTRAL_UI"),tr("kexin2008"),true);
+    //bool bDBConnect = pAdo->Connection(tr("10.169.70.170"),tr("DB_CENTRAL_UI"),tr("kexin2008"),true);
+    bool bDBConnect = pAdo->Connection(tr("127.0.0.1"),tr("DB_CENTRAL_UI"),tr("kexin2008"),true);
     return bDBConnect;
 }
 
@@ -136,20 +144,35 @@ bool MainWindow::WriteToDB(QString strReelTable)
 
         QStringList parts = strLine.split(',');
 
-        int nFileIndex = parts[0].toInt();
-        int nDefectIndex = parts[1].toInt();
-        int nDefectLevel = parts[2].toInt();
-        float fCentreX = parts[3].toFloat();
-        float fCentreY = parts[4].toFloat();
-        float fLength = parts[5].toFloat();
-        float fHeight = parts[6].toFloat();
+        int nFileIndex = 0;
+        int nDefectIndex = 0;
+        int nDefectLevel = 0;
+        float fCentreX = -9.9999f;
+        float fCentreY = -9.9999f;
+        float fLength = -9.9999f;
+        float fHeight = -9.9999f;
+
+        if (parts.size() > 0 && !parts[0].isEmpty())
+            nFileIndex = parts[0].toInt();
+        if (parts.size() > 1 && !parts[1].isEmpty())
+            nDefectIndex = parts[1].toInt();
+        if (parts.size() > 2 && !parts[2].isEmpty())
+            nDefectLevel = parts[2].toInt();
+        if (parts.size() > 3 && !parts[3].isEmpty())
+            fCentreX = parts[3].toFloat();
+        if (parts.size() > 4 && !parts[4].isEmpty())
+            fCentreY = parts[4].toFloat();
+        if (parts.size() > 5 && !parts[5].isEmpty())
+            fLength = parts[5].toFloat();
+        if (parts.size() > 6 && !parts[6].isEmpty())
+            fHeight = parts[6].toFloat();
 
         QString strRectCoordinate = QString("%1,%2,%3,%4").arg(fCentreX).arg(fCentreY).arg(fLength).arg(fHeight);
 
-        if(strRectCoordinate.contains("-9.9999"))
-            strRectCoordinate.clear();
+//        if(strRectCoordinate.contains("-99.9999"))
+//            strRectCoordinate.clear();
 
-        UpdateDefectInfo(m_pAdo,strReelTable,m_strDefectName[nDefectIndex], nFileIndex,nDefectLevel,strRectCoordinate);
+        //UpdateDefectInfo(m_pAdo,strReelTable,m_strDefectName[nDefectIndex], nFileIndex,nDefectLevel,strRectCoordinate);
     }
     file.close();
 
@@ -175,10 +198,8 @@ void MainWindow::UpdateDefectInfo(ADOLinkToBase* pAdo,QString strTableName,QStri
         QString strErr = QString("数据库更新失败！SQL语句：%1").arg(strSQL);
         AddOneMsg(strErr);
     }
-
 }
 
-// 辅助函数：转义SQL中的单引号，防止SQL注入和语法错误
 QString MainWindow::escapeSingleQuotes(const QString &str)
 {
     QString result = str;
@@ -209,7 +230,8 @@ void MainWindow::AddOneMsg(QString strInfo)
 
 void MainWindow::AddOneLog(QString strMonth, QString strDay, QString strInfo)
 {
-    QString strPath = QString("../../Log/%1/").arg(strMonth);
+    QString appDir=QCoreApplication::applicationDirPath();
+    QString strPath = QString("%1/../../UpdateLog/%2/").arg(appDir).arg(strMonth);
     QDir dir;
 
     if(!dir.exists(strPath))
@@ -218,11 +240,12 @@ void MainWindow::AddOneLog(QString strMonth, QString strDay, QString strInfo)
     }
 
     QString strFilePath = strPath+strDay+"log.txt";
+    m_logFile.setFileName(strFilePath); //绑定日志文件路径
 
     if(m_logFile.open(QIODevice::Append|QIODevice::Text))
     {
         QTextStream out(&m_logFile);
-        out <<strInfo<<"/r/n";
+        out <<strInfo<<"\r\n";
         m_logFile.close();
 
     }
@@ -240,7 +263,7 @@ void MainWindow::ToTray()
     if(!m_trayIcon)
     {
         m_trayIcon = new QSystemTrayIcon(this);
-        m_trayIcon->setIcon(QIcon(":src/icons/logo.png"));
+        m_trayIcon->setIcon(QIcon(":/src/icons/logo.png"));
         m_trayIcon->setToolTip("更新训练结果");
 
         //创建托盘右键菜单
