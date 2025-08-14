@@ -10,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("更新训练结果 V1.0.6");
+    setWindowTitle("更新训练结果 V1.0.7");
 
     m_pAdo = nullptr;
 
@@ -50,7 +50,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btn_MiniToTray,&QPushButton::clicked,this,&MainWindow::ToTray);
     connect(ui->btn_Close,&QPushButton::clicked,this,&MainWindow::close);
 
-    //AddOneMsg(tr("aaa"));
 }
 
 MainWindow::~MainWindow()
@@ -109,8 +108,8 @@ bool MainWindow::ConnectToDatabase(ADOLinkToBase *&pAdo)
         pAdo = nullptr;
     }
     pAdo = new ADOLinkToBase;
-    //bool bDBConnect = pAdo->Connection(tr("10.169.70.170"),tr("DB_CENTRAL_UI"),tr("kexin2008"),true);
-    bool bDBConnect = pAdo->Connection(tr("127.0.0.1"),tr("DB_CENTRAL_UI"),tr("kexin2008"),true);
+    bool bDBConnect = pAdo->Connection(tr("10.169.70.170"),tr("DB_CENTRAL_UI"),tr("kexin2008"),true);
+    //bool bDBConnect = pAdo->Connection(tr("127.0.0.1"),tr("DB_CENTRAL_UI"),tr("kexin2008"),true);
     return bDBConnect;
 }
 
@@ -169,10 +168,10 @@ bool MainWindow::WriteToDB(QString strReelTable)
 
         QString strRectCoordinate = QString("%1,%2,%3,%4").arg(fCentreX).arg(fCentreY).arg(fLength).arg(fHeight);
 
-//        if(strRectCoordinate.contains("-99.9999"))
-//            strRectCoordinate.clear();
+        if(strRectCoordinate.contains("-9.9999"))
+            strRectCoordinate.clear();
 
-        //UpdateDefectInfo(m_pAdo,strReelTable,m_strDefectName[nDefectIndex], nFileIndex,nDefectLevel,strRectCoordinate);
+        UpdateDefectInfo(m_pAdo,strReelTable,m_strDefectName[nDefectIndex], nFileIndex,nDefectLevel,strRectCoordinate);
     }
     file.close();
 
@@ -217,10 +216,7 @@ void MainWindow::AddOneMsg(QString strInfo)
     QString strMsg = strTime+"  "+strInfo;
 
     //添加到列表控件并滚动到最后
-    //m_listInfo->addItem(strInfo);
-    //m_listInfo->setCurrentRow(m_listInfo->count()-1);
     ui->textEdit_Info->append(strMsg);
-
 
     //记录到日志文件
     QString strMonth = time.toString("yyyy-MM");
@@ -247,7 +243,6 @@ void MainWindow::AddOneLog(QString strMonth, QString strDay, QString strInfo)
         QTextStream out(&m_logFile);
         out <<strInfo<<"\r\n";
         m_logFile.close();
-
     }
 }
 
@@ -349,10 +344,14 @@ void MainWindow::ExistNewReel()
 
             if(!b_IsExecute)
             {
-                QProcess::startDetached("C:/Users/adv/Desktop/test_script.sh");
-
-                strLog=QString("%1 正在进行缺陷分类分级...").arg(m_strReelTable);
-                AddOneMsg(strLog);
+                bool bOpen = QProcess::startDetached("explorer.exe", QStringList() << "file:///C:/Users/adv/Desktop/test_script.sh");
+                if(bOpen)
+                {
+                    strLog=QString("%1 正在进行缺陷分类分级...").arg(m_strReelTable);
+                    AddOneMsg(strLog);
+                }
+                else
+                    AddOneMsg("深度学习程序未能成功启动，请检查文件路径或者手动重试。");
             }
         }
         else
@@ -373,7 +372,9 @@ void MainWindow::HandleInferProcess()
     if(nIsInfer == 1)
     {
         //关闭外部程序
-        terminateProcessByName("mintty.exe");
+        bool bClose = terminateProcessByName("mintty.exe");
+        if(bClose)
+            AddOneMsg("深度学习程序未能成功关闭");
         AddOneMsg("缺陷分类完成，正在写入数据库...");
 
         settings.setValue("param/is_infer",0);
@@ -383,7 +384,9 @@ void MainWindow::HandleInferProcess()
     }
     else if(nIsInfer == 2)
     {
-        terminateProcessByName("mintty.exe");
+        bool bClose = terminateProcessByName("mintty.exe");
+        if(bClose)
+            AddOneMsg("深度学习程序未能成功关闭");
         AddOneMsg("训练异常，请重试！");
     }
     else
