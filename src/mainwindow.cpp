@@ -10,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle("更新训练结果 V1.0.7");
+    setWindowTitle("更新训练结果 V1.0.8");
 
     m_pAdo = nullptr;
 
@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     //读取缺陷名称映射表
     QSettings setDefectMap("D:/DefectMap.ini",QSettings::IniFormat);
-    setDefectMap.setIniCodec(QTextCodec::codecForName("UTF-8"));
+    setDefectMap.setIniCodec(QTextCodec::codecForName("GB2312"));
     setDefectMap.beginGroup("Param");
     for(int i=0;i<64;i++)
     {
@@ -373,7 +373,7 @@ void MainWindow::HandleInferProcess()
     {
         //关闭外部程序
         bool bClose = terminateProcessByName("mintty.exe");
-        if(bClose)
+        if(!bClose)
             AddOneMsg("深度学习程序未能成功关闭");
         AddOneMsg("缺陷分类完成，正在写入数据库...");
 
@@ -385,7 +385,7 @@ void MainWindow::HandleInferProcess()
     else if(nIsInfer == 2)
     {
         bool bClose = terminateProcessByName("mintty.exe");
-        if(bClose)
+        if(!bClose)
             AddOneMsg("深度学习程序未能成功关闭");
         AddOneMsg("训练异常，请重试！");
     }
