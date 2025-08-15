@@ -17,12 +17,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    src/ConfigManager.cpp \
+    src/CsvParser.cpp \
     src/ADOLinkToBase.cpp \
+    src/DatabaseManager.cpp \
+    src/LogManager.cpp \
     src/main.cpp \
     src/mainwindow.cpp
 
 HEADERS += \
+    src/ConfigManager.h \
+    src/CsvParser.h \
     src/ADOLinkToBase.h \
+    src/DatabaseManager.h \
+    src/LogManager.h \
     src/mainwindow.h
 
 FORMS += \
