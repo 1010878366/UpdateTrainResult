@@ -32,6 +32,7 @@ private:
 
     QString m_strReelConfigPath;        //存储卷号config文件的路径([卷号]/config.ini的路径)
     QString m_strReelTable;				//存储获取到的卷号([卷号]/config.ini中reel_table的值)
+    QString m_strPathConfig;            //存储"F:/Inference/path_config.ini"路径
 
     QTimer* m_timer1;
     QTimer* m_timer2;

@@ -6,15 +6,24 @@
 ConfigManager::ConfigManager(QString strPathConfig)
 {
     //读取全局文件路径
+    //QString strSavedPathConfig = strPathConfig;
     QSettings setFile(strPathConfig,QSettings::IniFormat);
     m_strFilePath = setFile.value("param/file_path","NULL").toString();
     LoadDefectMap();    //加载缺陷映射表
-    GetFilePath();
+    GetReelTable(m_strFilePath);
+
 }
 
-QString ConfigManager::GetFilePath()
+QString& ConfigManager::GetFilePath()
 {
     return m_strFilePath;
+}
+
+QString ConfigManager::GetNewFilePath(QString strPathConfig)
+{
+    QSettings setFile(strPathConfig,QSettings::IniFormat);
+    m_strNewFilePath = setFile.value("param/file_path","NULL").toString();
+    return m_strNewFilePath;
 }
 
 QString ConfigManager::GetDefectName(int nIndex)
@@ -26,8 +35,10 @@ QString ConfigManager::GetDefectName(int nIndex)
 
 QString ConfigManager::GetReelTable(QString strReelConfigPath)
 {
+    //strReelConfigPath += "/config.ini";
     QSettings settings(strReelConfigPath, QSettings::IniFormat);
-    return settings.value("param/reel_table","NULL").toString();
+    QString strReelTable = settings.value("param/reel_table","NULL").toString();
+    return strReelTable;
 }
 
 bool ConfigManager::SetIsExecute(QString strReelConfigPath,bool bExecute)

@@ -15,10 +15,12 @@ MainWindow::MainWindow(QWidget *parent)
     , m_trayIcon(nullptr)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.1.1");
+    setWindowTitle("更新训练结果 V1.1.2");
+
+    m_strPathConfig = QString("F:/Inference/path_config.ini");
 
     // 初始化核心对象
-    m_configManager = new ConfigManager("F:/Inference/path_config.ini");
+    m_configManager = new ConfigManager(m_strPathConfig);
     m_dbManager = new DatabaseManager("10.169.70.170", "DB_CENTRAL_UI", "kexin2008");
     m_logManager = new LogManager(QCoreApplication::applicationDirPath() + "/../../UpdateLog/");
     m_logManager->SetTextEdit(ui->textEdit_Info);
@@ -57,8 +59,8 @@ MainWindow::~MainWindow()
 void MainWindow::OpenButton()
 {
     //1.手动选择[卷号]config.ini文件
-    QString strReelConfigPath = QFileDialog::getOpenFileName(
-        this, tr("选择配置文件"), QCoreApplication::applicationDirPath(), tr("INI文件(*.ini)"));
+    //QString strReelConfigPath = QFileDialog::getOpenFileName(this, tr("选择配置文件"), QCoreApplication::applicationDirPath(), tr("INI文件(*.ini)"));
+    QString strReelConfigPath = QFileDialog::getOpenFileName(this, tr("选择配置文件"), "F:/Inference/", tr("INI文件(*.ini)"));
     if(strReelConfigPath.isEmpty())
         return;
 
@@ -133,8 +135,8 @@ bool MainWindow::WriteToDB(QString strReelTable)
             m_logManager->AddOneMsg("数据库更新失败！");
     }
     file.close();
-
-    QSettings settings(m_strReelConfigPath,QSettings::IniFormat);
+    QString strReelConfigPath = QString("F:/Inference/%1/config.ini").arg(strReelTable);
+    QSettings settings(strReelConfigPath,QSettings::IniFormat);
     settings.setValue("param/is_execute","1");
 
     return true;
@@ -164,7 +166,7 @@ void MainWindow::ToTray()
     if(!m_trayIcon)
     {
         m_trayIcon = new QSystemTrayIcon(this);
-        m_trayIcon->setIcon(QIcon(":/src/icons/logo.png"));
+        m_trayIcon->setIcon(QIcon(":/src/icons/logo2.png"));
         m_trayIcon->setToolTip("更新训练结果");
 
         QMenu *trayMenu = new QMenu(this);
@@ -212,31 +214,44 @@ void MainWindow::onTimer3() { ToTray(); m_timer3->stop(); }
 // 检测新卷号
 void MainWindow::ExistNewReel()
 {
-    QString strGetFilePath = m_configManager->GetFilePath();
-    if(m_strReelConfigPath != strGetFilePath)
+    QString strLog;
+    //1.判断是否获取到最新文件
+    QString strGetFilePath,strGetNewFilePath;
+    strGetFilePath = m_configManager->GetFilePath();
+    strGetNewFilePath = m_configManager->GetNewFilePath(m_strPathConfig);
+    if(strGetFilePath != strGetNewFilePath)
     {
-        m_strReelConfigPath = QString("%1/config.ini").arg(strGetFilePath);
+        m_configManager->GetFilePath() = strGetNewFilePath;
+        m_strReelConfigPath = strGetNewFilePath+"/config.ini";
         m_strReelTable = m_configManager->GetReelTable(m_strReelConfigPath);
-
         if(m_strReelTable != "NULL")
         {
-            m_logManager->AddOneMsg(QString("找到新文件：%1").arg(m_strReelTable));
+            strLog = QString("找到新文件: %1").arg(m_strReelTable);
+            m_logManager->AddOneMsg(strLog);
 
-            QSettings setReelConfig(m_strReelConfigPath, QSettings::IniFormat);
-            bool bIsExecute = setReelConfig.value("param/is_execute", 0).toInt() != 0;
+            //2.进行Python深度学习步骤
 
-            if(!bIsExecute)
+            QSettings setReelConfig(m_strReelConfigPath,QSettings::IniFormat);
+            bool b_IsExecute = setReelConfig.value("param/is_execute",0).toInt()!=0;
+            if(!b_IsExecute)
             {
                 bool bOpen = QProcess::startDetached("explorer.exe", QStringList() << "file:///C:/Users/adv/Desktop/test_script.sh");
                 if(bOpen)
-                    m_logManager->AddOneMsg(QString("%1 正在进行缺陷分类分级...").arg(m_strReelTable));
+                {
+                    strLog = QString("%1 正在进行缺陷分类分级...").arg(m_strReelTable);
+                    m_logManager->AddOneMsg(strLog);
+                }
                 else
-                    m_logManager->AddOneMsg("深度学习程序未能成功启动，请检查文件路径或手动重试。");
+                    m_logManager->AddOneMsg("深度学习程序未能成功启动，请检查文件路径或者手动重试。");
             }
         }
-
-        m_timer2->start(2000);
+        else
+        {
+            return;
+        }
     }
+    //3.循环判断Python深度学习步骤是否完成，完成立即关闭
+    m_timer2->start(2000);
 }
 
 // 处理 Python 深度学习程序
