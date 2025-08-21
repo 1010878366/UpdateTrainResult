@@ -12,10 +12,10 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , m_trayIcon(nullptr)
+    //, m_trayIcon(nullptr)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.1.2");
+    setWindowTitle("更新训练结果 V1.1.3");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 
@@ -24,25 +24,15 @@ MainWindow::MainWindow(QWidget *parent)
     m_dbManager = new DatabaseManager("10.169.70.170", "DB_CENTRAL_UI", "kexin2008");
     m_logManager = new LogManager(QCoreApplication::applicationDirPath() + "/../../UpdateLog/");
     m_logManager->SetTextEdit(ui->textEdit_Info);
-
-    // 定时器
-    m_timer1 = new QTimer(this);
-    connect(m_timer1, &QTimer::timeout, this, &MainWindow::onTimer1);
-    m_timer1->start(2000);
-
-    m_timer2 = new QTimer(this);
-    connect(m_timer2, &QTimer::timeout, this, &MainWindow::onTimer2);
-    m_timer2->setSingleShot(true);
-
-    m_timer3 = new QTimer(this);
-    connect(m_timer3, &QTimer::timeout, this, &MainWindow::onTimer3);
-    m_timer3->setSingleShot(true);
-    m_timer3->start(3000);
+    m_trayManager = new TrayManager(this);
+    m_timerManager = new TimerManager(this,this);
 
     // 按钮绑定
     connect(ui->btn_Open, &QPushButton::clicked, this, &MainWindow::OpenButton);
     connect(ui->btn_MiniToTray, &QPushButton::clicked, this, &MainWindow::ToTray);
     connect(ui->btn_Close, &QPushButton::clicked, this, &MainWindow::close);
+
+    m_logManager->AddOneMsg("自动更新程序已经启动！");
 }
 
 MainWindow::~MainWindow()
@@ -51,13 +41,14 @@ MainWindow::~MainWindow()
     delete m_configManager;
     delete m_dbManager;
     delete m_logManager;
-    if(m_trayIcon)
-        delete m_trayIcon;
+    delete m_trayManager;
+    delete m_timerManager;
 }
 
 // 手动选择配置文件
 void MainWindow::OpenButton()
 {
+    QString strInfo;
     //1.手动选择[卷号]config.ini文件
     //QString strReelConfigPath = QFileDialog::getOpenFileName(this, tr("选择配置文件"), QCoreApplication::applicationDirPath(), tr("INI文件(*.ini)"));
     QString strReelConfigPath = QFileDialog::getOpenFileName(this, tr("选择配置文件"), "F:/Inference/", tr("INI文件(*.ini)"));
@@ -66,17 +57,19 @@ void MainWindow::OpenButton()
 
     //2.显示路径到lineEdit
     ui->lineEdit_Path->setText(strReelConfigPath);
+    strInfo = tr("手动选择路径:%1").arg(strReelConfigPath);
+    m_logManager->AddOneMsg(strInfo);
 
     //3.读取reel_table参数
     QString strReelTable = m_configManager->GetReelTable(strReelConfigPath);
 
-    m_logManager->AddOneMsg(tr("正在写入数据库"));
-    QString strInfo;
+    m_logManager->AddOneMsg(tr("【%1】正在写入数据库").arg(strReelTable));
+
     bool bWrite = WriteToDB(strReelTable);
     if (bWrite)
-        strInfo = tr("数据表：%1 完成手动更新！").arg(strReelTable);
+        strInfo = tr("数据表【%1】完成手动更新！").arg(strReelTable);
     else
-        strInfo = tr("数据表：%1 手动更新失败，请重试或检查文件！").arg(strReelTable);
+        strInfo = tr("数据表【%1】手动更新失败，请重试或检查文件！").arg(strReelTable);
     m_logManager->AddOneMsg(strInfo);
 }
 
@@ -148,68 +141,28 @@ void MainWindow::AutomaticUpdateDatabase(QString strReelTable)
     QString strInfo;
     bool bWrite = WriteToDB(strReelTable);
     if(bWrite)
-        strInfo = tr("数据表：%1 完成自动更新!").arg(strReelTable);
+        strInfo = tr("数据表【%1】完成自动更新!").arg(strReelTable);
     else
-        strInfo = tr("数据表：%1 自动更新失败，请重试或手动更新!").arg(strReelTable);
+        strInfo = tr("数据表【%1】自动更新失败，请重试或手动更新!").arg(strReelTable);
     m_logManager->AddOneMsg(strInfo);
 }
 
 // 托盘
 void MainWindow::ToTray()
 {
-    if(!QSystemTrayIcon::isSystemTrayAvailable())
+    if(!m_trayManager->isTrayAvailable())
     {
         m_logManager->AddOneMsg("当前系统不支持最小化到托盘");
         return;
     }
 
-    if(!m_trayIcon)
-    {
-        m_trayIcon = new QSystemTrayIcon(this);
-        m_trayIcon->setIcon(QIcon(":/src/icons/logo2.png"));
-        m_trayIcon->setToolTip("更新训练结果");
-
-        QMenu *trayMenu = new QMenu(this);
-        QAction *restoreAct = new QAction("显示窗口", this);
-        QAction *quitAct = new QAction("退出", this);
-
-        connect(restoreAct, &QAction::triggered, this, &MainWindow::showNormal);
-        connect(quitAct, &QAction::triggered, qApp, &QApplication::quit);
-
-        trayMenu->addAction(restoreAct);
-        trayMenu->addSeparator();
-        trayMenu->addAction(quitAct);
-
-        m_trayIcon->setContextMenu(trayMenu);
-
-        connect(m_trayIcon, &QSystemTrayIcon::activated, this, [=](QSystemTrayIcon::ActivationReason reason){
-            if(reason == QSystemTrayIcon::DoubleClick)
-            {
-                this->showNormal();
-                this->activateWindow();
-                DeleteTray();
-            }
-        });
-    }
-
-    m_trayIcon->show();
-    this->hide();
+    m_trayManager->createTray(this);
 }
 
 void MainWindow::DeleteTray()
 {
-    if(m_trayIcon)
-    {
-        m_trayIcon->hide();
-        delete m_trayIcon;
-        m_trayIcon = nullptr;
-    }
+    m_trayManager->deleteTray();
 }
-
-// 定时器回调
-void MainWindow::onTimer1() { ExistNewReel(); }
-void MainWindow::onTimer2() { HandleInferProcess(); m_timer2->stop(); }
-void MainWindow::onTimer3() { ToTray(); m_timer3->stop(); }
 
 // 检测新卷号
 void MainWindow::ExistNewReel()
@@ -226,7 +179,7 @@ void MainWindow::ExistNewReel()
         m_strReelTable = m_configManager->GetReelTable(m_strReelConfigPath);
         if(m_strReelTable != "NULL")
         {
-            strLog = QString("找到新文件: %1").arg(m_strReelTable);
+            strLog = QString("找到新文件【%1】").arg(m_strReelTable);
             m_logManager->AddOneMsg(strLog);
 
             //2.进行Python深度学习步骤
@@ -238,7 +191,7 @@ void MainWindow::ExistNewReel()
                 bool bOpen = QProcess::startDetached("explorer.exe", QStringList() << "file:///C:/Users/adv/Desktop/test_script.sh");
                 if(bOpen)
                 {
-                    strLog = QString("%1 正在进行缺陷分类分级...").arg(m_strReelTable);
+                    strLog = QString("【%1】正在进行缺陷分类分级...").arg(m_strReelTable);
                     m_logManager->AddOneMsg(strLog);
                 }
                 else
@@ -251,7 +204,8 @@ void MainWindow::ExistNewReel()
         }
     }
     //3.循环判断Python深度学习步骤是否完成，完成立即关闭
-    m_timer2->start(2000);
+    m_timerManager->startTimer2();
+    //m_timer2->start(2000);
 }
 
 // 处理 Python 深度学习程序

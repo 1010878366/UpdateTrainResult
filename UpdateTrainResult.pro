@@ -18,20 +18,22 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     src/ConfigManager.cpp \
-    src/CsvParser.cpp \
     src/ADOLinkToBase.cpp \
     src/DatabaseManager.cpp \
     src/LogManager.cpp \
     src/main.cpp \
-    src/mainwindow.cpp
+    src/mainwindow.cpp \
+    src/timermanager.cpp \
+    src/traymanager.cpp
 
 HEADERS += \
     src/ConfigManager.h \
-    src/CsvParser.h \
     src/ADOLinkToBase.h \
     src/DatabaseManager.h \
     src/LogManager.h \
-    src/mainwindow.h
+    src/mainwindow.h \
+    src/timermanager.h \
+    src/traymanager.h
 
 FORMS += \
     src/mainwindow.ui
