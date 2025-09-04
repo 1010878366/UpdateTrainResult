@@ -1,5 +1,6 @@
 ﻿#include "ConfigManager.h"
 #include<QSettings>
+#include<QMessageBox>
 #include <QTextCodec>
 #pragma execution_character_set("utf-8")
 
@@ -26,13 +27,6 @@ QString ConfigManager::GetNewFilePath(QString strPathConfig)
     return m_strNewFilePath;
 }
 
-QString ConfigManager::GetDefectName(int nIndex)
-{
-    if(nIndex >= 0 && nIndex < 64)
-        return m_strDefectName[nIndex];
-    return "无分类";
-}
-
 QString ConfigManager::GetReelTable(QString strReelConfigPath)
 {
     //strReelConfigPath += "/config.ini";
@@ -55,10 +49,22 @@ void ConfigManager::LoadDefectMap()
     QSettings setDefectMap("D:/DefectMap.ini",QSettings::IniFormat);
     setDefectMap.setIniCodec(QTextCodec::codecForName("GB2312"));
     setDefectMap.beginGroup("Param");
-    for(int i=0;i<64;i++)
+
+    m_strDefectName.clear();
+    const QStringList allConfigKeys = setDefectMap.allKeys();
+    for(const QString& keyStr : allConfigKeys)
     {
-        QString strKey = QString::number(i);
-        m_strDefectName[i]=setDefectMap.value(strKey,"无分类").toString();
+        bool isIntKey = false;
+        int intKey = keyStr.toInt(&isIntKey);
+        if(!isIntKey)
+            continue;
+
+        m_strDefectName[intKey]=setDefectMap.value(keyStr,"无分类").toString();
     }
     setDefectMap.endGroup();
+}
+
+QString ConfigManager::GetDefectName(int nIndex)
+{
+    return m_strDefectName.value(nIndex,"无分类");
 }

@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     //, m_trayIcon(nullptr)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.1.3");
+    setWindowTitle("更新训练结果 V1.1.4");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 

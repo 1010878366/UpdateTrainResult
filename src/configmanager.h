@@ -2,6 +2,8 @@
 #define CONFIGMANAGER_H
 
 #include<QString>
+#include<QVector>
+#include<QMap>
 
 //管理配置文件和缺陷映射表
 class ConfigManager
@@ -19,7 +21,8 @@ public:
 private:
     QString m_strFilePath;          //存储初始化中的文件路径(path_config.ini中的file_path的值)
     QString m_strNewFilePath;       //存储最新的文件路径(path_config.ini中的file_path的值)
-    QString m_strDefectName[64];    //缺陷名称映射表
+    //QString m_strDefectName[64];    //缺陷名称映射表
+    QMap<int,QString> m_strDefectName;   //缺陷名称映射表
 
 
 
