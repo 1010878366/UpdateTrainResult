@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     //, m_trayIcon(nullptr)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.1.4");
+    setWindowTitle("更新训练结果 V1.1.5");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 
@@ -29,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 按钮绑定
     connect(ui->btn_Open, &QPushButton::clicked, this, &MainWindow::OpenButton);
+    connect(ui->btn_Write, &QPushButton::clicked, this, &MainWindow::WriteButton);
     connect(ui->btn_MiniToTray, &QPushButton::clicked, this, &MainWindow::ToTray);
     connect(ui->btn_Close, &QPushButton::clicked, this, &MainWindow::close);
 
@@ -48,7 +49,6 @@ MainWindow::~MainWindow()
 // 手动选择配置文件
 void MainWindow::OpenButton()
 {
-    QString strInfo;
     //1.手动选择[卷号]config.ini文件
     //QString strReelConfigPath = QFileDialog::getOpenFileName(this, tr("选择配置文件"), QCoreApplication::applicationDirPath(), tr("INI文件(*.ini)"));
     QString strReelConfigPath = QFileDialog::getOpenFileName(this, tr("选择配置文件"), "F:/Inference/", tr("INI文件(*.ini)"));
@@ -57,21 +57,56 @@ void MainWindow::OpenButton()
 
     //2.显示路径到lineEdit
     ui->lineEdit_Path->setText(strReelConfigPath);
-    strInfo = tr("手动选择路径:%1").arg(strReelConfigPath);
+    QString strInfo = tr("手动选择路径:%1").arg(strReelConfigPath);
     m_logManager->AddOneMsg(strInfo);
 
     //3.读取reel_table参数
-    QString strReelTable = m_configManager->GetReelTable(strReelConfigPath);
+    m_currentReelTable = m_configManager->GetReelTable(strReelConfigPath);
 
-    m_logManager->AddOneMsg(tr("【%1】正在写入数据库").arg(strReelTable));
-
-    bool bWrite = WriteToDB(strReelTable);
-    if (bWrite)
-        strInfo = tr("数据表【%1】完成手动更新！").arg(strReelTable);
+    // 提示用户可以点击写入按钮
+    if(!m_currentReelTable.isEmpty())
+    {
+        strInfo = tr("已获取数据表信息：%1，请点击[写入数据库]按钮执行更新").arg(m_currentReelTable);
+        m_logManager->AddOneMsg(strInfo);
+    }
     else
-        strInfo = tr("数据表【%1】手动更新失败，请重试或检查文件！").arg(strReelTable);
+    {
+        m_logManager->AddOneMsg(tr("配置文件中未找到有效的数据表信息"));
+        m_currentReelTable.clear(); // 清空无效数据
+    }
+}
+
+void MainWindow::WriteButton()
+{
+    //1.检查是否有有效的表名
+    if(m_currentReelTable.isEmpty())
+    {
+        QMessageBox::warning(this, tr("警告"), tr("请先通过[打开]按钮选择有效的配置文件"));
+        return;
+    }
+
+    //2.记录开始写入的日志（主线程中记录）
+    QString strInfo = tr("【%1】正在写入数据库").arg(m_currentReelTable);
+    m_logManager->AddOneMsg(strInfo);
+
+    //3.调用实际写入函数（后续可移到子线程）
+    bool bWrite = performWriteToDB(m_currentReelTable);
+
+    //4.记录写入结果日志（主线程中记录）
+    if (bWrite)
+        strInfo = tr("数据表【%1】完成手动更新！").arg(m_currentReelTable);
+    else
+        strInfo = tr("数据表【%1】手动更新失败，请重试或检查文件！").arg(m_currentReelTable);
     m_logManager->AddOneMsg(strInfo);
 }
+
+bool MainWindow::performWriteToDB(const QString& strReelTable)
+{
+    // 仅执行写入操作，不涉及任何UI或日志
+    // 直接调用原有的WriteToDB函数
+    return WriteToDB(strReelTable);
+}
+
 
 bool MainWindow::WriteToDB(QString strReelTable)
 {

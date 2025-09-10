@@ -11,6 +11,7 @@
 #include "traymanager.h"
 #include "timermanager.h"
 #include "ui_mainwindow.h"
+#include <QMessageBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -37,10 +38,13 @@ private:
     QString m_strReelConfigPath;        //存储卷号config文件的路径([卷号]/config.ini的路径)
     QString m_strReelTable;				//存储获取到的卷号([卷号]/config.ini中reel_table的值)
     QString m_strPathConfig;            //存储"F:/Inference/path_config.ini"路径
+    QString m_currentReelTable;         //暂存表名
 
 
 private slots:
-    void OpenButton();                    //手动选择配置文件
+    void OpenButton();                  //读取配置按钮
+    void WriteButton();                 //写入数据库按钮
+    bool performWriteToDB(const QString& strReelTable); //实际执行写入的函数
     void AutomaticUpdateDatabase(QString strReelTable);  //自动写入数据库
     bool terminateProcessByName(const QString &procName); //关闭进程
 
