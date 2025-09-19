@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     //, m_trayIcon(nullptr)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.1.7");
+    setWindowTitle("更新训练结果 V1.1.8");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 
@@ -50,7 +50,6 @@ MainWindow::~MainWindow()
 void MainWindow::OpenButton()
 {
     //1.手动选择[卷号]config.ini文件
-    //QString strReelConfigPath = QFileDialog::getOpenFileName(this, tr("选择配置文件"), QCoreApplication::applicationDirPath(), tr("INI文件(*.ini)"));
     QString strReelConfigPath = QFileDialog::getOpenFileName(this, tr("选择配置文件"), "F:/Inference/", tr("INI文件(*.ini)"));
     if(strReelConfigPath.isEmpty())
         return;
@@ -90,7 +89,6 @@ void MainWindow::WriteButton()
     m_logManager->AddOneMsg(strInfo);
 
     //3.调用实际写入函数（后续可移到子线程）
-    //bool bWrite = performWriteToDB(m_currentReelTable);
     bool bWrite = WriteToDB(m_strReelTable);
 
     //4.记录写入结果日志（主线程中记录）
@@ -100,14 +98,6 @@ void MainWindow::WriteButton()
         strInfo = tr("数据表【%1】手动更新失败，请重试或检查文件！").arg(m_currentReelTable);
     m_logManager->AddOneMsg(strInfo);
 }
-
-//bool MainWindow::performWriteToDB(const QString& strReelTable)
-//{
-//    // 仅执行写入操作，不涉及任何UI或日志
-//    // 直接调用原有的WriteToDB函数
-//    return WriteToDB(strReelTable);
-//}
-
 
 bool MainWindow::WriteToDB(const QString& strReelTable)
 {

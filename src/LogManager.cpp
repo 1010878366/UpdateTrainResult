@@ -8,7 +8,12 @@
 LogManager::LogManager(QString strLogRootDir)
 {
     m_textEdit = nullptr;
-    m_strLogRootDir = strLogRootDir;
+    QDir logDir(strLogRootDir);
+    m_strLogRootDir = logDir.absolutePath();
+
+    if (!m_strLogRootDir.endsWith(QDir::separator()))
+        m_strLogRootDir += QDir::separator();
+
 }
 
 void LogManager::SetTextEdit(QTextEdit* textEdit)
@@ -30,11 +35,11 @@ void LogManager::AddOneMsg(QString strInfo, bool bUI)
     QString strMonth = QDateTime::currentDateTime().toString("yyyy-MM");
     QString strDay = QDateTime::currentDateTime().toString("dd");
 
-    QString strPath = QString("%1/%2/").arg(m_strLogRootDir).arg(strMonth);
-
+    QString strPath = QString("%1%2/").arg(m_strLogRootDir).arg(strMonth);
     QDir dir;
+
     if(!dir.exists(strPath))
-        dir.mkdir(strPath);
+        dir.mkpath(strPath);
 
     QString strFilePath = strPath + strDay + "log.txt";
     QFile file(strFilePath);

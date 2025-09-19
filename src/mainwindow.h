@@ -44,7 +44,6 @@ private:
 private slots:
     void OpenButton();                  //读取配置按钮
     void WriteButton();                 //写入数据库按钮
-    //bool performWriteToDB(const QString& strReelTable); //实际执行写入的函数
     void AutomaticUpdateDatabase(QString strReelTable);  //自动写入数据库
     bool terminateProcessByName(const QString &procName); //关闭进程
 
