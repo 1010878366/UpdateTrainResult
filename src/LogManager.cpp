@@ -5,7 +5,7 @@
 #include <QDateTime>
 #include <QMutexLocker>
 
-LogManager::LogManager(QString strLogRootDir)
+LogManager::LogManager(const QString& strLogRootDir, QObject* parent) : QObject(parent)
 {
     m_textEdit = nullptr;
     QDir logDir(strLogRootDir);
@@ -21,14 +21,14 @@ void LogManager::SetTextEdit(QTextEdit* textEdit)
     m_textEdit = textEdit;
 }
 
-void LogManager::AddOneMsg(QString strInfo, bool bUI)
+void LogManager::AddOneMsg(QString strInfo/*, bool bUI*/)
 {
     QMutexLocker locker(&m_mutex);  //保证多线程安全
     QString strTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
     QString strMsg = strTime+"  "+strInfo;
 
     //UI显示
-    if(bUI && m_textEdit)
+    if(/*bUI && */m_textEdit)
         m_textEdit->append(strMsg);
 
     //日志写入文件

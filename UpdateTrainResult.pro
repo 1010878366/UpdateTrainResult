@@ -24,7 +24,8 @@ SOURCES += \
     src/main.cpp \
     src/mainwindow.cpp \
     src/timermanager.cpp \
-    src/traymanager.cpp
+    src/traymanager.cpp \
+    src/threadmanager.cpp
 
 HEADERS += \
     src/ConfigManager.h \
@@ -33,7 +34,8 @@ HEADERS += \
     src/LogManager.h \
     src/mainwindow.h \
     src/timermanager.h \
-    src/traymanager.h
+    src/traymanager.h \
+    src/threadmanager.h
 
 FORMS += \
     src/mainwindow.ui

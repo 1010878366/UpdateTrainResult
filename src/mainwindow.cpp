@@ -12,20 +12,20 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    //, m_trayIcon(nullptr)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.1.8");
+    setWindowTitle("更新训练结果 V1.1.9");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 
     // 初始化核心对象
     m_configManager = new ConfigManager(m_strPathConfig);
-    m_dbManager = new DatabaseManager("10.169.70.170", "DB_CENTRAL_UI", "kexin2008");
+    m_dbManager = new DatabaseManager();
     m_logManager = new LogManager(QCoreApplication::applicationDirPath() + "/../../UpdateLog/");
     m_logManager->SetTextEdit(ui->textEdit_Info);
     m_trayManager = new TrayManager(this);
     m_timerManager = new TimerManager(this,this);
+    m_threadManager = new ThreadManager(this);
 
     // 按钮绑定
     connect(ui->btn_Open, &QPushButton::clicked, this, &MainWindow::OpenButton);
@@ -33,7 +33,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btn_MiniToTray, &QPushButton::clicked, this, &MainWindow::ToTray);
     connect(ui->btn_Close, &QPushButton::clicked, this, &MainWindow::close);
 
+    connect(m_threadManager,&ThreadManager::logMessage,m_logManager,&LogManager::AddOneMsg,Qt::QueuedConnection);
+    connect(m_threadManager,&ThreadManager::writeFinished,this,&MainWindow::onWriteFinished,Qt::QueuedConnection);
+
     m_logManager->AddOneMsg("自动更新程序已经启动！");
+    ui->textEdit_Info->append(QString("主线程ID: %1").arg((quintptr)QThread::currentThreadId()));
+
 }
 
 MainWindow::~MainWindow()
@@ -84,19 +89,32 @@ void MainWindow::WriteButton()
         return;
     }
 
-    //2.记录开始写入的日志（主线程中记录）
-    QString strInfo = tr("【%1】正在写入数据库").arg(m_currentReelTable);
-    m_logManager->AddOneMsg(strInfo);
+    if (!m_threadManager)
+    {
+        m_threadManager = new ThreadManager(this);
 
-    //3.调用实际写入函数（后续可移到子线程）
-    bool bWrite = WriteToDB(m_strReelTable);
+        // 绑定日志信号
+        connect(m_threadManager, &ThreadManager::logMessage, this, [=](const QString &msg){
+            m_logManager->AddOneMsg(msg);
+        });
 
-    //4.记录写入结果日志（主线程中记录）
-    if (bWrite)
-        strInfo = tr("数据表【%1】完成手动更新！").arg(m_currentReelTable);
+        // 绑定写入完成信号
+        connect(m_threadManager, &ThreadManager::writeFinished, this, [=](bool success, const QString &tableName){
+            if (success)
+                m_logManager->AddOneMsg(QString("数据表【%1】手动更新完成！").arg(tableName));
+            else
+                m_logManager->AddOneMsg(QString("数据表【%1】手动更新失败！").arg(tableName));
+        });
+    }
+
+    ui->btn_Write->setEnabled(false);
+    //设置任务参数
+    m_threadManager->setWriteDBParams(m_currentReelTable,m_configManager,m_dbManager);
+
+    if(!m_threadManager->isRunning())
+        m_threadManager->start();
     else
-        strInfo = tr("数据表【%1】手动更新失败，请重试或检查文件！").arg(m_currentReelTable);
-    m_logManager->AddOneMsg(strInfo);
+        m_logManager->AddOneMsg("数据库线程正在运行...");
 }
 
 bool MainWindow::WriteToDB(const QString& strReelTable)
@@ -256,7 +274,6 @@ void MainWindow::HandleInferProcess()
     }
 }
 
-// 杀死进程
 bool MainWindow::terminateProcessByName(const QString &procName)
 {
 #ifdef Q_OS_WIN
@@ -265,4 +282,19 @@ bool MainWindow::terminateProcessByName(const QString &procName)
     int ret = QProcess::execute("pkill", {procName});
 #endif
     return ret == 0;
+}
+
+void MainWindow::onWriteFinished(bool success, const QString &tableName)
+{
+    if (success)
+    {
+        m_logManager->AddOneMsg(QString("线程完成写入数据库: %1").arg(tableName));
+    }
+    else
+    {
+        m_logManager->AddOneMsg(QString("线程写数据库失败: %1").arg(tableName));
+    }
+
+
+    ui->btn_Write->setEnabled(true);
 }

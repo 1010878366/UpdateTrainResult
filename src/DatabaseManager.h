@@ -8,7 +8,8 @@
 class DatabaseManager
 {
 public:
-    DatabaseManager(QString strHost, QString strDB, QString strPwd); // 构造函数
+    DatabaseManager();
+    ~DatabaseManager();
     bool ConnectToDB();     //连接数据库
     bool DisConnectDB();    //断开数据库
     bool UpdateDefectInfo(QString strTableName, QString strDefectName, int nIndex, int nLevel, QString strRectCoordinate); // 更新缺陷信息

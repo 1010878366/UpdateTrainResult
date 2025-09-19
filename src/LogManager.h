@@ -5,14 +5,17 @@
 #include <QTextEdit>
 #include <QMutex>
 #include <QTextCodec>
+#include <QObject>
 #pragma execution_character_set("utf-8")
 
 //日志管理类
-class LogManager
+class LogManager : public QObject
 {
+    Q_OBJECT
 public:
-    LogManager(QString strLogRootDir);
-    void AddOneMsg(QString strInfo,bool bUI = true);    //写日志
+    explicit LogManager(const QString& strLogRootDir, QObject* parent = nullptr);
+    //LogManager(QString strLogRootDir);
+    void AddOneMsg(QString strInfo/*,bool bUI = true*/);    //写日志
     void SetTextEdit(QTextEdit* textEdit);  //设置UI显示控件
 
 private:

@@ -1,11 +1,11 @@
 ﻿#include "DatabaseManager.h"
 
-DatabaseManager::DatabaseManager(QString strHost, QString strDB, QString strPwd)
+DatabaseManager::DatabaseManager()
 {
     m_pAdo = nullptr;
-    m_strHost = strHost;
-    m_strDB = strDB;
-    m_strPwd = strPwd;
+    m_strHost = "10.169.70.170";
+    m_strDB = "DB_CENTRAL_UI";
+    m_strPwd = "kexin2008";
 }
 
 bool DatabaseManager::ConnectToDB()
@@ -17,6 +17,11 @@ bool DatabaseManager::ConnectToDB()
     }
     m_pAdo = new ADOLinkToBase;
     return m_pAdo->Connection(m_strHost, m_strDB, m_strPwd, true);
+}
+
+DatabaseManager::~DatabaseManager()
+{
+    DisConnectDB();
 }
 
 bool DatabaseManager::DisConnectDB()

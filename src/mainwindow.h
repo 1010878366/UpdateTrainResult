@@ -10,6 +10,7 @@
 #include "LogManager.h"
 #include "traymanager.h"
 #include "timermanager.h"
+#include "threadmanager.h"
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 
@@ -33,6 +34,7 @@ private:
     LogManager* m_logManager;           //日志管理
     TrayManager* m_trayManager;         //托盘管理
     TimerManager* m_timerManager;       //定时器管理
+    ThreadManager* m_threadManager;     //线程管理
 
 
     QString m_strReelConfigPath;        //存储卷号config文件的路径([卷号]/config.ini的路径)
@@ -46,6 +48,7 @@ private slots:
     void WriteButton();                 //写入数据库按钮
     void AutomaticUpdateDatabase(QString strReelTable);  //自动写入数据库
     bool terminateProcessByName(const QString &procName); //关闭进程
+    void onWriteFinished(bool success,const QString &tableName);
 
 
 public:
