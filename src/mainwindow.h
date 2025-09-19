@@ -52,7 +52,7 @@ private slots:
 
 
 public:
-    bool WriteToDB(const QString& strReelTable);
+    //bool WriteToDB(const QString& strReelTable);
     void ToTray();                        //最小化到托盘
     void ExistNewReel();                  //检测新卷号
     void HandleInferProcess();            //处理深度学习程序

@@ -14,7 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.1.9");
+    setWindowTitle("更新训练结果 V1.2.0");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 
@@ -37,7 +37,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_threadManager,&ThreadManager::writeFinished,this,&MainWindow::onWriteFinished,Qt::QueuedConnection);
 
     m_logManager->AddOneMsg("自动更新程序已经启动！");
-    ui->textEdit_Info->append(QString("主线程ID: %1").arg((quintptr)QThread::currentThreadId()));
+    m_logManager->AddOneMsg(QString("主线程ID: %1").arg((quintptr)QThread::currentThreadId()));
+    //ui->textEdit_Info->append(QString("主线程ID: %1").arg((quintptr)QThread::currentThreadId()));
 
 }
 
@@ -108,85 +109,88 @@ void MainWindow::WriteButton()
     }
 
     ui->btn_Write->setEnabled(false);
+
     //设置任务参数
-    m_threadManager->setWriteDBParams(m_currentReelTable,m_configManager,m_dbManager);
+    m_threadManager->setDBTaskParams(m_currentReelTable,m_configManager,m_dbManager, false);
 
     if(!m_threadManager->isRunning())
         m_threadManager->start();
     else
-        m_logManager->AddOneMsg("数据库线程正在运行...");
+        m_logManager->AddOneMsg("数据库线程正在 手动 运行...");
 }
 
-bool MainWindow::WriteToDB(const QString& strReelTable)
-{
-    QString strCsvPath = QString("F:/Inference/%1/result.csv").arg(strReelTable);
-    QFile file(strCsvPath);
-    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return false;
+//bool MainWindow::WriteToDB(const QString& strReelTable)
+//{
+//    QString strCsvPath = QString("F:/Inference/%1/result.csv").arg(strReelTable);
+//    QFile file(strCsvPath);
+//    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
+//        return false;
 
-    if(!m_dbManager->ConnectToDB())
-        return false;
+//    if(!m_dbManager->ConnectToDB())
+//        return false;
 
-    while(!file.atEnd())
-    {
-        QByteArray line = file.readLine();
-        QString strLine(line);
-        strLine = strLine.trimmed();
-        if(strLine.isEmpty())
-            continue;
+//    while(!file.atEnd())
+//    {
+//        QByteArray line = file.readLine();
+//        QString strLine(line);
+//        strLine = strLine.trimmed();
+//        if(strLine.isEmpty())
+//            continue;
 
-        QStringList parts = strLine.split(',');
+//        QStringList parts = strLine.split(',');
 
-        int nFileIndex = 0;
-        int nDefectIndex = 0;
-        int nDefectLevel = 0;
-        float fCentreX = -9.9999f;
-        float fCentreY = -9.9999f;
-        float fLength = -9.9999f;
-        float fHeight = -9.9999f;
+//        int nFileIndex = 0;
+//        int nDefectIndex = 0;
+//        int nDefectLevel = 0;
+//        float fCentreX = -9.9999f;
+//        float fCentreY = -9.9999f;
+//        float fLength = -9.9999f;
+//        float fHeight = -9.9999f;
 
-        if (parts.size() > 0 && !parts[0].isEmpty())
-            nFileIndex = parts[0].toInt();
-        if (parts.size() > 1 && !parts[1].isEmpty())
-            nDefectIndex = parts[1].toInt();
-        if (parts.size() > 2 && !parts[2].isEmpty())
-            nDefectLevel = parts[2].toInt();
-        if (parts.size() > 3 && !parts[3].isEmpty())
-            fCentreX = parts[3].toFloat();
-        if (parts.size() > 4 && !parts[4].isEmpty())
-            fCentreY = parts[4].toFloat();
-        if (parts.size() > 5 && !parts[5].isEmpty())
-            fLength = parts[5].toFloat();
-        if (parts.size() > 6 && !parts[6].isEmpty())
-            fHeight = parts[6].toFloat();
+//        if (parts.size() > 0 && !parts[0].isEmpty())
+//            nFileIndex = parts[0].toInt();
+//        if (parts.size() > 1 && !parts[1].isEmpty())
+//            nDefectIndex = parts[1].toInt();
+//        if (parts.size() > 2 && !parts[2].isEmpty())
+//            nDefectLevel = parts[2].toInt();
+//        if (parts.size() > 3 && !parts[3].isEmpty())
+//            fCentreX = parts[3].toFloat();
+//        if (parts.size() > 4 && !parts[4].isEmpty())
+//            fCentreY = parts[4].toFloat();
+//        if (parts.size() > 5 && !parts[5].isEmpty())
+//            fLength = parts[5].toFloat();
+//        if (parts.size() > 6 && !parts[6].isEmpty())
+//            fHeight = parts[6].toFloat();
 
-        QString strRectCoordinate = QString("%1,%2,%3,%4").arg(fCentreX).arg(fCentreY).arg(fLength).arg(fHeight);
+//        QString strRectCoordinate = QString("%1,%2,%3,%4").arg(fCentreX).arg(fCentreY).arg(fLength).arg(fHeight);
 
-        if(strRectCoordinate.contains("-9.9999"))
-            strRectCoordinate.clear();
+//        if(strRectCoordinate.contains("-9.9999"))
+//            strRectCoordinate.clear();
 
-        bool bUpdate = m_dbManager->UpdateDefectInfo(strReelTable,m_configManager->GetDefectName(nDefectIndex),nFileIndex,nDefectLevel,strRectCoordinate);
-        if(!bUpdate)
-            m_logManager->AddOneMsg("数据库更新失败！");
-    }
-    file.close();
-    QString strReelConfigPath = QString("F:/Inference/%1/config.ini").arg(strReelTable);
-    QSettings settings(strReelConfigPath,QSettings::IniFormat);
-    settings.setValue("param/is_execute","1");
+//        bool bUpdate = m_dbManager->UpdateDefectInfo(strReelTable,m_configManager->GetDefectName(nDefectIndex),nFileIndex,nDefectLevel,strRectCoordinate);
+//        if(!bUpdate)
+//            m_logManager->AddOneMsg("数据库更新失败！");
+//    }
+//    file.close();
+//    QString strReelConfigPath = QString("F:/Inference/%1/config.ini").arg(strReelTable);
+//    QSettings settings(strReelConfigPath,QSettings::IniFormat);
+//    settings.setValue("param/is_execute","1");
 
-    return true;
-}
+//    return true;
+//}
 
 // 自动更新数据库
 void MainWindow::AutomaticUpdateDatabase(QString strReelTable)
 {
-    QString strInfo;
-    bool bWrite = WriteToDB(strReelTable);
-    if(bWrite)
-        strInfo = tr("数据表【%1】完成自动更新!").arg(strReelTable);
+    if (strReelTable.isEmpty())
+        return;
+
+    m_threadManager->setDBTaskParams(strReelTable,m_configManager,m_dbManager,true);
+
+    if(!m_threadManager->isRunning())
+        m_threadManager->start();
     else
-        strInfo = tr("数据表【%1】自动更新失败，请重试或手动更新!").arg(strReelTable);
-    m_logManager->AddOneMsg(strInfo);
+        m_logManager->AddOneMsg("数据库线程正在 自动 运行...");
 }
 
 // 托盘
@@ -288,13 +292,12 @@ void MainWindow::onWriteFinished(bool success, const QString &tableName)
 {
     if (success)
     {
-        m_logManager->AddOneMsg(QString("线程完成写入数据库: %1").arg(tableName));
+        m_logManager->AddOneMsg(QString("新线程完成写入数据库: %1").arg(tableName));
     }
     else
     {
-        m_logManager->AddOneMsg(QString("线程写数据库失败: %1").arg(tableName));
+        m_logManager->AddOneMsg(QString("新线程写数据库失败: %1").arg(tableName));
     }
-
 
     ui->btn_Write->setEnabled(true);
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <QThread>
 #include <QString>
+#include <QMutex>
 #include "configmanager.h"
 #include "DatabaseManager.h"
 
@@ -10,12 +11,16 @@ class ThreadManager : public QThread
 public:
     explicit ThreadManager(QObject *parent = nullptr);
 
-    // 设置任务参数
-    void setWriteDBParams(const QString& reelTable, ConfigManager* cfgMgr, DatabaseManager* dbMgr);
+    // 任务类型枚举
+    enum TaskType { None, WriteDB, InferProcess } m_task = None;    //None：没有任务；WriteDB：写数据库任务；InferProcess：Python 推理任务；AutoUpdateDB：自动更新数据库任务
+
+    //数据库写入任务函数
+    void setDBTaskParams(const QString& reelTable, ConfigManager* cfgMgr, DatabaseManager* dbMgr, bool isAuto = false);
+    //推理任务函数
     void setInferParams(const QString& configPath, ConfigManager* cfgMgr);
 
-    // 任务类型枚举
-    enum TaskType { None, WriteDB, InferProcess } m_task = None;    //None：没有任务；WriteDB：写数据库任务；InferProcess：Python 推理任务
+    void WriteToDB();       //写入数据库函数
+
 
 signals:
     void logMessage(const QString& msg);                  // 发送日志
@@ -26,11 +31,12 @@ protected:
     void run() override;  // 线程入口
 
 private:
-    // 写数据库参数
-    QString m_strReelTable;
+    QMutex m_mutex;         //线程锁
+    QString m_strReelTable;     //卷号名
+    QString m_strConfigPath;    //路径
+    bool m_isAuto = false;  //更新数据库  true:自动，false：手动
     ConfigManager* m_configManager = nullptr;
     DatabaseManager* m_dbManager = nullptr;
 
-    // 推理任务参数
-    QString m_strConfigPath;
+
 };
