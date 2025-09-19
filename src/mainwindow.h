@@ -44,13 +44,13 @@ private:
 private slots:
     void OpenButton();                  //读取配置按钮
     void WriteButton();                 //写入数据库按钮
-    bool performWriteToDB(const QString& strReelTable); //实际执行写入的函数
+    //bool performWriteToDB(const QString& strReelTable); //实际执行写入的函数
     void AutomaticUpdateDatabase(QString strReelTable);  //自动写入数据库
     bool terminateProcessByName(const QString &procName); //关闭进程
 
 
 public:
-    bool WriteToDB(QString strReelTable);
+    bool WriteToDB(const QString& strReelTable);
     void ToTray();                        //最小化到托盘
     void ExistNewReel();                  //检测新卷号
     void HandleInferProcess();            //处理深度学习程序

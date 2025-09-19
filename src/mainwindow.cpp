@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     //, m_trayIcon(nullptr)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.1.6");
+    setWindowTitle("更新训练结果 V1.1.7");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 
@@ -90,7 +90,8 @@ void MainWindow::WriteButton()
     m_logManager->AddOneMsg(strInfo);
 
     //3.调用实际写入函数（后续可移到子线程）
-    bool bWrite = performWriteToDB(m_currentReelTable);
+    //bool bWrite = performWriteToDB(m_currentReelTable);
+    bool bWrite = WriteToDB(m_strReelTable);
 
     //4.记录写入结果日志（主线程中记录）
     if (bWrite)
@@ -100,15 +101,15 @@ void MainWindow::WriteButton()
     m_logManager->AddOneMsg(strInfo);
 }
 
-bool MainWindow::performWriteToDB(const QString& strReelTable)
-{
-    // 仅执行写入操作，不涉及任何UI或日志
-    // 直接调用原有的WriteToDB函数
-    return WriteToDB(strReelTable);
-}
+//bool MainWindow::performWriteToDB(const QString& strReelTable)
+//{
+//    // 仅执行写入操作，不涉及任何UI或日志
+//    // 直接调用原有的WriteToDB函数
+//    return WriteToDB(strReelTable);
+//}
 
 
-bool MainWindow::WriteToDB(QString strReelTable)
+bool MainWindow::WriteToDB(const QString& strReelTable)
 {
     QString strCsvPath = QString("F:/Inference/%1/result.csv").arg(strReelTable);
     QFile file(strCsvPath);
@@ -156,8 +157,6 @@ bool MainWindow::WriteToDB(QString strReelTable)
         if(strRectCoordinate.contains("-9.9999"))
             strRectCoordinate.clear();
 
-        //QString strDefectName[64];
-        //m_dbManager->UpdateDefectInfo(strReelTable,strDefectName[nDefectIndex],nFileIndex,nDefectLevel,strRectCoordinate);
         bool bUpdate = m_dbManager->UpdateDefectInfo(strReelTable,m_configManager->GetDefectName(nDefectIndex),nFileIndex,nDefectLevel,strRectCoordinate);
         if(!bUpdate)
             m_logManager->AddOneMsg("数据库更新失败！");
@@ -240,7 +239,6 @@ void MainWindow::ExistNewReel()
     }
     //3.循环判断Python深度学习步骤是否完成，完成立即关闭
     m_timerManager->startTimer2();
-    //m_timer2->start(2000);
 }
 
 // 处理 Python 深度学习程序
