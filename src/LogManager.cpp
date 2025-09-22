@@ -4,10 +4,13 @@
 #include <QDir>
 #include <QDateTime>
 #include <QMutexLocker>
+#include <QApplication>
 
-LogManager::LogManager(const QString& strLogRootDir, QObject* parent) : QObject(parent)
+//LogManager::LogManager(const QString& strLogRootDir, QObject* parent) : QObject(parent)
+LogManager::LogManager(QObject* parent) : QObject(parent)
 {
     m_textEdit = nullptr;
+    QString strLogRootDir = QCoreApplication::applicationDirPath() + "/../../UpdateLog/";
     QDir logDir(strLogRootDir);
     m_strLogRootDir = logDir.absolutePath();
 

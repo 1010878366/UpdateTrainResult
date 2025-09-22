@@ -23,7 +23,7 @@ TimerManager::TimerManager(MainWindow* mainWindow, QObject* parent)
 
 TimerManager::~TimerManager()
 {
-    // QTimer会自动删除（因为parent是this），不用手动delete
+
 }
 
 void TimerManager::startTimer1()
@@ -56,8 +56,10 @@ void TimerManager::onTimer1()
 
 void TimerManager::onTimer2()
 {
-    if (m_mainWindow) m_mainWindow->HandleInferProcess();
-    if (m_timer2) m_timer2->stop();
+    if (m_mainWindow)
+        m_mainWindow->HandleInferProcess();
+    if (m_timer2)
+        m_timer2->stop();
 }
 
 void TimerManager::onTimer3()

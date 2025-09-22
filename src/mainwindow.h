@@ -5,6 +5,9 @@
 #include <QTimer>
 #include <QSystemTrayIcon>
 #include <QFile>
+#include <QCloseEvent>
+#include <QMessageBox>
+#include <QApplication>
 #include "ConfigManager.h"
 #include "DatabaseManager.h"
 #include "LogManager.h"
@@ -12,7 +15,7 @@
 #include "timermanager.h"
 #include "threadmanager.h"
 #include "ui_mainwindow.h"
-#include <QMessageBox>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -25,6 +28,9 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     Ui::MainWindow *ui;
@@ -41,11 +47,14 @@ private:
     QString m_strReelTable;				//存储获取到的卷号([卷号]/config.ini中reel_table的值)
     QString m_strPathConfig;            //存储"F:/Inference/path_config.ini"路径
     QString m_currentReelTable;         //暂存表名
+    bool m_isNormalClose;               //是否正常关闭
 
 
 private slots:
     void OpenButton();                  //读取配置按钮
     void WriteButton();                 //写入数据库按钮
+    void CloseButton();                 //关闭按钮
+    void onAboutToQuit();               //判断是否正常关闭程序
     void AutomaticUpdateDatabase(QString strReelTable);  //自动写入数据库
     bool terminateProcessByName(const QString &procName); //关闭进程
     void onWriteFinished(bool success,const QString &tableName);
@@ -57,6 +66,7 @@ public:
     void ExistNewReel();                  //检测新卷号
     void HandleInferProcess();            //处理深度学习程序
     void DeleteTray();
+
 
 };
 #endif // MAINWINDOW_H

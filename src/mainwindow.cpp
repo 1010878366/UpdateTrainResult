@@ -14,14 +14,15 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.2.0");
+    setWindowTitle("更新训练结果 V1.2.1");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 
     // 初始化核心对象
     m_configManager = new ConfigManager(m_strPathConfig);
     m_dbManager = new DatabaseManager();
-    m_logManager = new LogManager(QCoreApplication::applicationDirPath() + "/../../UpdateLog/");
+    //m_logManager = new LogManager(QCoreApplication::applicationDirPath() + "/../../UpdateLog/");
+    m_logManager = new LogManager(this);
     m_logManager->SetTextEdit(ui->textEdit_Info);
     m_trayManager = new TrayManager(this);
     m_timerManager = new TimerManager(this,this);
@@ -31,7 +32,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btn_Open, &QPushButton::clicked, this, &MainWindow::OpenButton);
     connect(ui->btn_Write, &QPushButton::clicked, this, &MainWindow::WriteButton);
     connect(ui->btn_MiniToTray, &QPushButton::clicked, this, &MainWindow::ToTray);
-    connect(ui->btn_Close, &QPushButton::clicked, this, &MainWindow::close);
+    connect(ui->btn_Close, &QPushButton::clicked, this, &MainWindow::CloseButton);
+    connect(qApp,&QApplication::aboutToQuit,this,&MainWindow::onAboutToQuit);   //程序退出前触发的最后一个信号
 
     connect(m_threadManager,&ThreadManager::logMessage,m_logManager,&LogManager::AddOneMsg,Qt::QueuedConnection);
     connect(m_threadManager,&ThreadManager::writeFinished,this,&MainWindow::onWriteFinished,Qt::QueuedConnection);
@@ -47,9 +49,29 @@ MainWindow::~MainWindow()
     delete ui;
     delete m_configManager;
     delete m_dbManager;
-    delete m_logManager;
     delete m_trayManager;
     delete m_timerManager;
+    delete m_logManager;
+
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    if(sender() == nullptr) //sender()为空 是用户点击窗口X按钮（系统触发）
+    {
+        QString strInfo = tr("点击窗口X按钮，程序关闭");
+        m_logManager->AddOneMsg(strInfo);
+    }
+    event->accept();
+}
+
+void MainWindow::onAboutToQuit()
+{
+    if(isVisible())
+    {
+        QString strInfo = tr("程序异常关闭");
+        m_logManager->AddOneMsg(strInfo);
+    }
 }
 
 // 手动选择配置文件
@@ -116,68 +138,16 @@ void MainWindow::WriteButton()
     if(!m_threadManager->isRunning())
         m_threadManager->start();
     else
-        m_logManager->AddOneMsg("数据库线程正在 手动 运行...");
+        m_logManager->AddOneMsg("数据库线程正在运行...");
 }
 
-//bool MainWindow::WriteToDB(const QString& strReelTable)
-//{
-//    QString strCsvPath = QString("F:/Inference/%1/result.csv").arg(strReelTable);
-//    QFile file(strCsvPath);
-//    if(!file.open(QIODevice::ReadOnly | QIODevice::Text))
-//        return false;
+void MainWindow::CloseButton()
+{
+    QString strInfo = tr("点击关闭按钮，程序关闭！");
+    m_logManager->AddOneMsg(strInfo);
 
-//    if(!m_dbManager->ConnectToDB())
-//        return false;
-
-//    while(!file.atEnd())
-//    {
-//        QByteArray line = file.readLine();
-//        QString strLine(line);
-//        strLine = strLine.trimmed();
-//        if(strLine.isEmpty())
-//            continue;
-
-//        QStringList parts = strLine.split(',');
-
-//        int nFileIndex = 0;
-//        int nDefectIndex = 0;
-//        int nDefectLevel = 0;
-//        float fCentreX = -9.9999f;
-//        float fCentreY = -9.9999f;
-//        float fLength = -9.9999f;
-//        float fHeight = -9.9999f;
-
-//        if (parts.size() > 0 && !parts[0].isEmpty())
-//            nFileIndex = parts[0].toInt();
-//        if (parts.size() > 1 && !parts[1].isEmpty())
-//            nDefectIndex = parts[1].toInt();
-//        if (parts.size() > 2 && !parts[2].isEmpty())
-//            nDefectLevel = parts[2].toInt();
-//        if (parts.size() > 3 && !parts[3].isEmpty())
-//            fCentreX = parts[3].toFloat();
-//        if (parts.size() > 4 && !parts[4].isEmpty())
-//            fCentreY = parts[4].toFloat();
-//        if (parts.size() > 5 && !parts[5].isEmpty())
-//            fLength = parts[5].toFloat();
-//        if (parts.size() > 6 && !parts[6].isEmpty())
-//            fHeight = parts[6].toFloat();
-
-//        QString strRectCoordinate = QString("%1,%2,%3,%4").arg(fCentreX).arg(fCentreY).arg(fLength).arg(fHeight);
-
-//        if(strRectCoordinate.contains("-9.9999"))
-//            strRectCoordinate.clear();
-
-//        bool bUpdate = m_dbManager->UpdateDefectInfo(strReelTable,m_configManager->GetDefectName(nDefectIndex),nFileIndex,nDefectLevel,strRectCoordinate);
-//        if(!bUpdate)
-//            m_logManager->AddOneMsg("数据库更新失败！");
-//    }
-//    file.close();
-//    QString strReelConfigPath = QString("F:/Inference/%1/config.ini").arg(strReelTable);
-//    QSettings settings(strReelConfigPath,QSettings::IniFormat);
-//    settings.setValue("param/is_execute","1");
-
-//    return true;
-//}
+    close();
+}
 
 // 自动更新数据库
 void MainWindow::AutomaticUpdateDatabase(QString strReelTable)

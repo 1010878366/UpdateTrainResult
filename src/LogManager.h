@@ -13,7 +13,8 @@ class LogManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit LogManager(const QString& strLogRootDir, QObject* parent = nullptr);
+    //explicit LogManager(const QString& strLogRootDir, QObject* parent = nullptr);
+    explicit LogManager(QObject* parent = nullptr);
     //LogManager(QString strLogRootDir);
     void AddOneMsg(QString strInfo/*,bool bUI = true*/);    //写日志
     void SetTextEdit(QTextEdit* textEdit);  //设置UI显示控件
