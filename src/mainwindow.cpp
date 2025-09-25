@@ -14,14 +14,13 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("更新训练结果 V1.2.1");
+    setWindowTitle("更新训练结果 V1.2.2");
 
     m_strPathConfig = QString("F:/Inference/path_config.ini");
 
     // 初始化核心对象
     m_configManager = new ConfigManager(m_strPathConfig);
     m_dbManager = new DatabaseManager();
-    //m_logManager = new LogManager(QCoreApplication::applicationDirPath() + "/../../UpdateLog/");
     m_logManager = new LogManager(this);
     m_logManager->SetTextEdit(ui->textEdit_Info);
     m_trayManager = new TrayManager(this);
@@ -37,11 +36,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(m_threadManager,&ThreadManager::logMessage,m_logManager,&LogManager::AddOneMsg,Qt::QueuedConnection);
     connect(m_threadManager,&ThreadManager::writeFinished,this,&MainWindow::onWriteFinished,Qt::QueuedConnection);
+    //connect(m_threadManager,&ThreadManager::writeFinished,this,&MainWindow::onInferFinished,Qt::QueuedConnection);
 
     m_logManager->AddOneMsg("自动更新程序已经启动！");
     m_logManager->AddOneMsg(QString("主线程ID: %1").arg((quintptr)QThread::currentThreadId()));
-    //ui->textEdit_Info->append(QString("主线程ID: %1").arg((quintptr)QThread::currentThreadId()));
-
 }
 
 MainWindow::~MainWindow()
@@ -57,9 +55,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    if(sender() == nullptr) //sender()为空 是用户点击窗口X按钮（系统触发）
+    if(event->spontaneous())
     {
-        QString strInfo = tr("点击窗口X按钮，程序关闭");
+        QString strInfo = tr("程序关闭");
         m_logManager->AddOneMsg(strInfo);
     }
     event->accept();
@@ -199,7 +197,6 @@ void MainWindow::ExistNewReel()
             m_logManager->AddOneMsg(strLog);
 
             //2.进行Python深度学习步骤
-
             QSettings setReelConfig(m_strReelConfigPath,QSettings::IniFormat);
             bool b_IsExecute = setReelConfig.value("param/is_execute",0).toInt()!=0;
             if(!b_IsExecute)
@@ -271,3 +268,4 @@ void MainWindow::onWriteFinished(bool success, const QString &tableName)
 
     ui->btn_Write->setEnabled(true);
 }
+

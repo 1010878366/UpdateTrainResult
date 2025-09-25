@@ -10,7 +10,7 @@
 LogManager::LogManager(QObject* parent) : QObject(parent)
 {
     m_textEdit = nullptr;
-    QString strLogRootDir = QCoreApplication::applicationDirPath() + "/../../UpdateLog/";
+    QString strLogRootDir = QCoreApplication::applicationDirPath() + "/../UpdateLog/";
     QDir logDir(strLogRootDir);
     m_strLogRootDir = logDir.absolutePath();
 

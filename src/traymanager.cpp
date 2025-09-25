@@ -19,7 +19,7 @@ void TrayManager::createTray(QWidget *mainWindow)
 
     if (!m_trayIcon) {
         m_trayIcon = new QSystemTrayIcon(this);
-        m_trayIcon->setIcon(QIcon(":/src/icons/logo2.png"));
+        m_trayIcon->setIcon(QIcon(":/src/icons/logo1.png"));
         m_trayIcon->setToolTip("更新训练结果");
 
         QMenu *trayMenu = new QMenu(mainWindow);

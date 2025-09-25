@@ -38,14 +38,15 @@ void ThreadManager::run()
     {
         emit logMessage(QString("WriteToDB() 线程ID: %1").arg((quintptr)QThread::currentThreadId()));
         WriteToDB();
+        m_task = None;
     }
-    else if(m_task == InferProcess)
-    {
+//    else if(m_task == InferProcess)
+//    {
 
-    }
+//    }
     else
     {
-
+        m_task = None;
     }
 }
 
@@ -125,3 +126,4 @@ void ThreadManager::WriteToDB()
 
     emit writeFinished(true, m_strReelTable);
 }
+

@@ -42,13 +42,11 @@ private:
     TimerManager* m_timerManager;       //定时器管理
     ThreadManager* m_threadManager;     //线程管理
 
-
     QString m_strReelConfigPath;        //存储卷号config文件的路径([卷号]/config.ini的路径)
     QString m_strReelTable;				//存储获取到的卷号([卷号]/config.ini中reel_table的值)
     QString m_strPathConfig;            //存储"F:/Inference/path_config.ini"路径
     QString m_currentReelTable;         //暂存表名
     bool m_isNormalClose;               //是否正常关闭
-
 
 private slots:
     void OpenButton();                  //读取配置按钮
@@ -59,9 +57,7 @@ private slots:
     bool terminateProcessByName(const QString &procName); //关闭进程
     void onWriteFinished(bool success,const QString &tableName);
 
-
 public:
-    //bool WriteToDB(const QString& strReelTable);
     void ToTray();                        //最小化到托盘
     void ExistNewReel();                  //检测新卷号
     void HandleInferProcess();            //处理深度学习程序
